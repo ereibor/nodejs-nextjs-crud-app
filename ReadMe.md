@@ -40,8 +40,10 @@ nextjs-nodejs-project/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/ereibor/nodejs-nextjs-crud-app
+
+cd nodejs-nextjs-crud-app
+
 ```
 
 ### 2. Setup Backend
@@ -98,4 +100,4 @@ Use [Postman](https://www.postman.com/) to test backend routes.
 
 ## 👤 Author
 
-* **Your Name** – [@Tunere Ereibor](https://github.com/ereibor)
+* **TUNERE EREIBOR** – [@ereibor](https://github.com/ereibor)
