@@ -1,0 +1,17 @@
+# Node.js backend
+/backend/node_modules
+/backend/dist
+/backend/.env
+/backend/.vscode/
+
+# Next.js frontend
+/frontend/node_modules
+/frontend/.next
+/frontend/out
+/frontend/.env.local
+/frontend/.vscode/
+
+# System files
+.DS_Store
+.env
+Thumbs.db
