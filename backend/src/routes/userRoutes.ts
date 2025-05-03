@@ -11,9 +11,9 @@ router.get('/users/:id', getUserById);
 
 
 // Route to update a user
-router.put('/update/:id', updateUser);
+router.put('/users/:id', updateUser);
 
 // Route to delete a user
-router.delete('/delete/:id', deleteUser);
+router.delete('/users/:id', deleteUser);
 
 export default router;

@@ -53,9 +53,9 @@ export const getUserById = async (req: Request, res: Response): Promise<any> => 
 // Function to update a user
 export const updateUser = async (req: Request, res: Response): Promise<any> => {
   const { id } = req.params;
-  const { name, email, role, status, profilePhoto } = req.body;
+  const { name, email, role,  profilePhoto } = req.body;
   try {
-    const updatedUser = await User.findByIdAndUpdate(id, { name, email, role, status, profilePhoto }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(id, { name, email, role, profilePhoto }, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
