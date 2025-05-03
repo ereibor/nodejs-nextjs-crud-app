@@ -19,4 +19,13 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
+// Automatically remove password and __v when converting to JSON
+userSchema.set('toJSON', {
+  transform: (_doc, ret) => {
+    delete ret.password;
+    delete ret.__v;
+    return ret;
+  }
+});
+
 export const User = mongoose.model<IUser>('User', userSchema);

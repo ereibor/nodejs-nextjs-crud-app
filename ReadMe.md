@@ -80,6 +80,7 @@ npm run dev
 | POST   | `/api/auth/register` | Register user |
 | POST   | `/api/auth/login`    | Login user    |
 | GET    | `/api/users`         | Get all users |
+| GET    | `/api/users/:id`     | Get single user|
 | PUT    | `/api/users/:id`     | Update user   |
 | DELETE | `/api/users/:id`     | Delete user   |
 
