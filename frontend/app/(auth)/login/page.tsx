@@ -1,68 +1,84 @@
-// app/(auth)/login/page.tsx
-"use client";
+'use client';
 
-import { useState } from "react";
-import InputField from "../../../components/Input";
-import Button from "../../../components/Button";
-import ErrorMessage from "../../../components/ErrorMessage";
+import { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import InputField from '../../../components/Input';
+import Button from '../../../components/Button';
+import ErrorMessage from '../../../components/ErrorMessage';
+import { useRouter } from 'next/navigation';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email').min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const router = useRouter();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: LoginForm) => {
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.message || "Login failed");
-        return;
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message);
+      localStorage.setItem('token', json.token);
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      // show top-level error
+      if (err instanceof Error) {
+        alert(err.message || 'Login failed');
+      } else {
+        alert('Login failed');
       }
-
-      // Save token to localStorage or cookie if needed
-      localStorage.setItem("token", data.token);
-      // Redirect to dashboard
-      window.location.href = "/dashboard";
-    } catch (err) {
-      setError("Something went wrong");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         className="bg-white p-6 rounded shadow-md w-full max-w-sm"
       >
-        <h2 className="text-2xl font-bold mb-4 text-blue-500">Login</h2>
-        {error && <ErrorMessage message={error} />}
-        <InputField
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+        <h2 className="text-2xl font-bold mb-4 text-blue-600">Login</h2>
+
+        <Controller
+          name="email"
+          control={control}
+          render={({ field }) => (
+            <InputField {...field} type="email" placeholder="Email" />
+          )}
         />
-        <InputField
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+        {errors.email && <ErrorMessage message={errors.email.message!} />}
+
+        <Controller
+          name="password"
+          control={control}
+          render={({ field }) => (
+            <InputField {...field} type="password" placeholder="Password" />
+          )}
         />
-        <Button type="submit" text="Login" />
+        {errors.password && <ErrorMessage message={errors.password.message!} />}
+
+        <Button type="submit" text={isSubmitting ? 'Logging in…' : 'Login'} />
+
         <p className="text-sm mt-4 text-center">
-          Don&apos;t have an account?{" "}
-          <a href="/register" className="text-[#102E50] hover:underline">
+          Don’t have an account?{' '}
+          <a href="/register" className="text-blue-600 hover:underline">
             Register
           </a>
         </p>

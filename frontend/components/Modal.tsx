@@ -1,137 +1,134 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import InputField from './Input';
 import Button from './Button';
+import ErrorMessage from './ErrorMessage';
 
-type User = {
-  id?: string;
-  name: string;
-  email: string;
-  role: string;
-  profilePhoto?: string;
-};
+// Zod schema
+const userSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Please enter a valid email').min(1, 'Email is required'),
+  role: z.string().min(1, 'Role is required'),
+  profilePhoto: z
+    .instanceof(File)
+    .optional(),
+});
+
+type User = z.infer<typeof userSchema>;
 
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (user: User) => void;
-  userToEdit?: User; // Optional user to edit
+  userToEdit?: User;
 };
 
 const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
-  const [name, setName] = useState(userToEdit?.name || '');
-  const [email, setEmail] = useState(userToEdit?.email || '');
-  const [role, setRole] = useState(userToEdit?.role || '');
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-  const [error, setError] = useState('');
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<User>({
+    resolver: zodResolver(userSchema),
+    defaultValues: userToEdit || {
+      name: '',
+      email: '',
+      role: '',
+      profilePhoto: undefined,
+    },
+  });
 
+  // Populate form when editing
   useEffect(() => {
     if (userToEdit) {
-      setName(userToEdit.name);
-      setEmail(userToEdit.email);
-      setRole(userToEdit.role);
-    } else {
-      // Reset form for adding new user
-      setName('');
-      setEmail('');
-      setRole('');
+      setValue('name', userToEdit.name);
+      setValue('email', userToEdit.email);
+      setValue('role', userToEdit.role);
+      setValue('profilePhoto', userToEdit.profilePhoto as File | undefined);
     }
-  }, [userToEdit]);
+  }, [userToEdit, setValue]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !role) {
-      setError('All fields are required');
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email');
-      return;
-    }
-
-    const newUser = {
-      name,
-      email,
-      role,
-      profilePhoto: profilePhoto ? URL.createObjectURL(profilePhoto) : undefined,
-    };
-
-    onSubmit(newUser);
-    onClose();
-  };
-
+  // Lock body scroll when modal open
   useEffect(() => {
-    if (isOpen) {
-      // Disable scrolling when modal is open
-      document.body.style.overflow = 'hidden';
-    } else {
-      // Re-enable scrolling when modal is closed
-      document.body.style.overflow = 'auto';
-    }
-
-    return () => {
-      document.body.style.overflow = 'auto'; // Clean up when component is unmounted
-    };
+    document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    return () => { document.body.style.overflow = 'auto'; };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600/50 bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm relative">
-        {/* Header with title and close button */}
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-[#102E50]">
             {userToEdit ? 'Edit User' : 'Add User'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-xl text-gray-600 hover:text-gray-900 cursor-pointer"
-            aria-label="Close"
-          >
-            &times;
+          <button onClick={onClose} className="text-gray-600 hover:text-gray-900" aria-label="Close">
+            ×
           </button>
         </div>
 
-        {error && <p className="text-red-500 mb-2">{error}</p>}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Name */}
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <InputField {...field} type="text" placeholder="Name" />
+            )}
+          />
+          {errors.name && <ErrorMessage message={errors.name.message!} />}
 
-        <form onSubmit={handleSubmit}>
-          <InputField
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+          {/* Email */}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field }) => (
+              <InputField {...field} type="email" placeholder="Email" />
+            )}
           />
-          <InputField
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
+          {errors.email && <ErrorMessage message={errors.email.message!} />}
+
+          {/* Role */}
+          <Controller
+            name="role"
+            control={control}
+            render={({ field }) => (
+              <InputField {...field} type="text" placeholder="Role" />
+            )}
           />
-          <InputField
-            type="text"
-            placeholder="Role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            required
-          />
+          {errors.role && <ErrorMessage message={errors.role.message!} />}
+
+          {/* Profile Photo */}
           <div className="mb-4">
             <label htmlFor="profilePhoto" className="block text-sm text-gray-700">
               Profile Photo
             </label>
-            <input
-              type="file"
-              id="profilePhoto"
-              onChange={(e) => setProfilePhoto(e.target.files ? e.target.files[0] : null)}
-              className="w-full p-2 border rounded"
+            <Controller
+              name="profilePhoto"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="file"
+                  id="profilePhoto"
+                  onChange={(e) => field.onChange(e.target.files?.[0] || null)}
+                  className="w-full p-2 border rounded"
+                />
+              )}
             />
           </div>
+
+          {/* Submit */}
           <div className="flex justify-between">
-            <Button type="submit" text={userToEdit ? 'Save Changes' : 'Add User'} />
+            <Button
+              type="submit"
+              text={userToEdit ? 'Save Changes' : 'Add User'}
+            />
           </div>
         </form>
       </div>
