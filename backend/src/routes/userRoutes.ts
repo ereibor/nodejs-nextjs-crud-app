@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUsers, updateUser, deleteUser, getUserById } from '../controllers/userController';
+import { getUsers, updateUser, deleteUser, getUserById, createUser  } from '../controllers/userController';
 
 const router = express.Router();
 
@@ -9,6 +9,8 @@ router.get('/', getUsers);
 
 router.get('/users/:id', getUserById);
 
+// Route to create a user
+router.post('/users', createUser);
 
 // Route to update a user
 router.put('/users/:id', updateUser);

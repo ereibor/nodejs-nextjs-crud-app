@@ -1,17 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'next/navigation';
+import { jwtDecode } from 'jwt-decode';
 
 import InputField from '../../../components/Input';
 import Button from '../../../components/Button';
 import ErrorMessage from '../../../components/ErrorMessage';
 
-import { login } from '@/redux/authThunk'; // Adjust the path if needed
+import { login } from '@/redux/authThunk';
 import type { AppDispatch, RootState } from '@/redux/store';
 
 const loginSchema = z.object({
@@ -21,38 +22,61 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+type DecodedToken = {
+  role: string;
+  [key: string]: unknown;
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const token = useSelector((state: RootState) => state.auth.token);
   const error = useSelector((state: RootState) => state.auth.error);
   const loading = useSelector((state: RootState) => state.auth.loading);
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (token) {
-      router.push('/dashboard');
-    }
-  }, [token, router]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
 
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded: DecodedToken = jwtDecode(token);
+        if (decoded.role === 'admin') {
+          router.push('/dashboard');
+        } else {
+          router.push('/user');
+        }
+      } catch (err) {
+        console.error('Invalid token:', err);
+      }
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [token, router]);
+
   const onSubmit = (data: LoginForm) => {
     dispatch(login(data))
       .unwrap()
-      .then(() => {
-        router.push('/dashboard');
+      .then((resToken) => {
+        const decoded: DecodedToken = jwtDecode(resToken);
+        if (decoded.role === 'admin') {
+          router.push('/dashboard');
+        } else {
+          router.push('/user');
+        }
       })
       .catch(() => {
-        // Error handled via Redux
+        // Error is already handled via Redux
       });
   };
 
-  return (
+  return checkingAuth ? (
+    <div className="h-screen flex items-center justify-center">Checking authentication...</div>
+  ) : (
     <div className="min-h-screen flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit(onSubmit)}

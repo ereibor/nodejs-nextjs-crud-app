@@ -1,11 +1,11 @@
 "use client";
 
-type User = {
-  id: string;
+interface User {
+  _id: string;
   name: string;
   email: string;
   role: string;
-};
+}
 
 type UserTableProps = {
   users: User[];
@@ -21,7 +21,7 @@ const UserTable = ({ users, onEdit, onDelete }: UserTableProps) => {
       ) : (
         users.map((user) => (
           <div
-            key={user.id}
+            key={user._id}
             className="bg-white p-4 border rounded shadow-sm sm:hidden"
           >
             {/* Card-style layout for small screens */}
@@ -39,7 +39,7 @@ const UserTable = ({ users, onEdit, onDelete }: UserTableProps) => {
                   Edit
                 </button>
                 <button
-                  onClick={() => onDelete(user.id)}
+                  onClick={() => onDelete(user._id)}
                   className="text-red-600 hover:underline text-xs"
                 >
                   Delete
@@ -63,7 +63,7 @@ const UserTable = ({ users, onEdit, onDelete }: UserTableProps) => {
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="text-sm text-gray-800 border-t">
+              <tr key={user._id} className="text-sm text-gray-800 border-t">
                 <td className="p-3">{user.name}</td>
                 <td className="p-3">{user.email}</td>
                 <td className="p-3">{user.role}</td>
@@ -76,7 +76,7 @@ const UserTable = ({ users, onEdit, onDelete }: UserTableProps) => {
                     Edit
                   </button>
                   <button
-                    onClick={() => onDelete(user.id)}
+                    onClick={() => onDelete(user._id)}
                     className="text-red-600 hover:underline cursor-pointer"
                   >
                     Delete

@@ -8,23 +8,23 @@ import InputField from './Input';
 import Button from './Button';
 import ErrorMessage from './ErrorMessage';
 
-// Zod schema
+// Schema (omit _id here but we'll attach it manually)
 const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Please enter a valid email').min(1, 'Email is required'),
   role: z.string().min(1, 'Role is required'),
-  profilePhoto: z
-    .instanceof(File)
-    .optional(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  profilePhoto: z.instanceof(File).optional(),
 });
 
 type User = z.infer<typeof userSchema>;
+type UserWithId = User & { _id?: string };
 
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (user: User) => void;
-  userToEdit?: User;
+  onSubmit: (user: UserWithId) => void;
+  userToEdit?: Partial<UserWithId>;
 };
 
 const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
@@ -35,34 +35,35 @@ const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
     setValue,
   } = useForm<User>({
     resolver: zodResolver(userSchema),
-    defaultValues: userToEdit || {
-      name: '',
-      email: '',
-      role: '',
+    defaultValues: {
+      name: userToEdit?.name || '',
+      email: userToEdit?.email || '',
+      role: userToEdit?.role || '',
+      password: '',
       profilePhoto: undefined,
     },
   });
 
-  // Populate form when editing
   useEffect(() => {
     if (userToEdit) {
-      setValue('name', userToEdit.name);
-      setValue('email', userToEdit.email);
-      setValue('role', userToEdit.role);
+      setValue('name', userToEdit.name ?? '');
+      setValue('email', userToEdit.email ?? '');
+      setValue('role', userToEdit.role ?? '');
       setValue('profilePhoto', userToEdit.profilePhoto as File | undefined);
     }
   }, [userToEdit, setValue]);
 
-  // Lock body scroll when modal open
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'auto';
-    return () => { document.body.style.overflow = 'auto'; };
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-gray-600/50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-[#102E50]">
@@ -73,14 +74,20 @@ const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        {/* 🔧 Attach _id manually when editing */}
+        <form
+          onSubmit={handleSubmit((data) => {
+            const finalData: UserWithId = userToEdit && '_id' in userToEdit
+              ? { ...data, _id: userToEdit._id }
+              : data;
+            onSubmit(finalData);
+          })}
+        >
           {/* Name */}
           <Controller
             name="name"
             control={control}
-            render={({ field }) => (
-              <InputField {...field} type="text" placeholder="Name" />
-            )}
+            render={({ field }) => <InputField {...field} type="text" placeholder="Name" />}
           />
           {errors.name && <ErrorMessage message={errors.name.message!} />}
 
@@ -88,9 +95,7 @@ const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
           <Controller
             name="email"
             control={control}
-            render={({ field }) => (
-              <InputField {...field} type="email" placeholder="Email" />
-            )}
+            render={({ field }) => <InputField {...field} type="email" placeholder="Email" />}
           />
           {errors.email && <ErrorMessage message={errors.email.message!} />}
 
@@ -98,11 +103,17 @@ const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
           <Controller
             name="role"
             control={control}
-            render={({ field }) => (
-              <InputField {...field} type="text" placeholder="Role" />
-            )}
+            render={({ field }) => <InputField {...field} type="text" placeholder="Role" />}
           />
           {errors.role && <ErrorMessage message={errors.role.message!} />}
+
+          {/* Password */}
+          <Controller
+            name="password"
+            control={control}
+            render={({ field }) => <InputField {...field} type="password" placeholder="Password" />}
+          />
+          {errors.password && <ErrorMessage message={errors.password.message!} />}
 
           {/* Profile Photo */}
           <div className="mb-4">
@@ -123,12 +134,8 @@ const Modal = ({ isOpen, onClose, onSubmit, userToEdit }: ModalProps) => {
             />
           </div>
 
-          {/* Submit */}
           <div className="flex justify-between">
-            <Button
-              type="submit"
-              text={userToEdit ? 'Save Changes' : 'Add User'}
-            />
+            <Button type="submit" text={userToEdit ? 'Save Changes' : 'Add User'} />
           </div>
         </form>
       </div>

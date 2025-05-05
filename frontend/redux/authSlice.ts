@@ -7,8 +7,16 @@ interface AuthState {
   error: string | null;
 }
 
+// Safe check for localStorage
+const getInitialToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
 const initialState: AuthState = {
-  token: null,
+  token: getInitialToken(),
   loading: false,
   error: null,
 };
@@ -19,12 +27,17 @@ const authSlice = createSlice({
   reducers: {
     setToken: (state, action: PayloadAction<string>) => {
       state.token = action.payload;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", action.payload);
+      }
     },
     logout: (state) => {
       state.token = null;
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
     },
   },
-
   extraReducers: (builder) => {
     builder
       // LOGIN
@@ -35,6 +48,9 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", action.payload);
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -49,6 +65,9 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", action.payload);
+        }
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
